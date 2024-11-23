@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Змійка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        #game {
+            display: grid;
+            grid-template-columns: repeat(20, 20px);
+            grid-template-rows: repeat(20, 20px);
+            gap: 1px;
+            background-color: #000;
+        }
+
+        .cell {
+            width: 20px;
+            height: 20px;
+            background-color: #222;
+        }
+
+        .snake {
+            background-color: #0f0;
+        }
+
+        .food {
+            background-color: #f00;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="game"></div>
+    <div id="score">Скори: 0</div>
+
+    <script>
+        const ROWS = 20;
+        const COLS = 20;
+        const grid = [];
+        let snake = [{ row: 10, col: 10 }];
+        let food = { row: 5, col: 5 };
+        let direction = { row: 0, col: 1 }; // Початковий напрямок вправо
+        let score = 0;
+        let gameInterval;
+
+        // Створення поля
+        function createGrid() {
+            const gameContainer = document.getElementById('game');
+            gameContainer.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                const row = [];
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    gameContainer.appendChild(cell);
+                    row.push(cell);
+                }
+                grid.push(row);
+            }
+        }
+
+        // Оновлення гри
+        function updateGame() {
+            moveSnake();
+            if (checkCollision()) {
+                clearInterval(gameInterval);
+                alert('Гра закінчена! Ваш рахунок: ' + score);
+                return;
+            }
+            if (eatFood()) {
+                score += 10;
+                document.getElementById('score').textContent = `Скори: ${score}`;
+                placeFood();
+            }
+            drawGame();
+        }
+
+        // Малювання змійки і їжі
+        function drawGame() {
+            // Очищення всіх клітинок
+            grid.forEach(row => row.forEach(cell => cell.classList.remove('snake', 'food')));
+            
+            // Малювання змійки
+            snake.forEach(segment => {
+                grid[segment.row][segment.col].classList.add('snake');
+            });
+
+            // Малювання їжі
+            grid[food.row][food.col].classList.add('food');
+        }
+
+        // Переміщення змійки
+        function moveSnake() {
+            const head = { row: snake[0].row + direction.row, col: snake[0].col + direction.col };
+            snake.unshift(head); // Додаємо нову голову змійки
+
+            if (!eatFood()) {
+                snake.pop(); // Видаляємо останній сегмент, якщо їжа не з'їдена
+            }
+        }
+
+        // Перевірка на зіткнення зі стінами або тілом
+        function checkCollision() {
+            const head = snake[0];
+            // Перевірка зіткнення з межами
+            if (head.row < 0 || head.row >= ROWS || head.col < 0 || head.col >= COLS) {
+                return true;
+            }
+            // Перевірка зіткнення з тілом
+            for (let i = 1; i < snake.length; i++) {
+                if (snake[i].row === head.row && snake[i].col === head.col) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Перевірка, чи з'їла змійка їжу
+        function eatFood() {
+            const head = snake[0];
+            return head.row === food.row && head.col === food.col;
+        }
+
+        // Розміщення нової їжі на полі
+        function placeFood() {
+            let row, col;
+            do {
+                row = Math.floor(Math.random() * ROWS);
+                col = Math.floor(Math.random() * COLS);
+            } while (isFoodOnSnake(row, col));
+            food = { row, col };
+        }
+
+        // Перевірка, чи не знаходиться їжа на тілі змійки
+        function isFoodOnSnake(row, col) {
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].row === row && snake[i].col === col) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Обробка клавіш
+        function handleKeyPress(event) {
+            if (event.key === 'ArrowUp' && direction.row === 0) {
+                direction = { row: -1, col: 0 };
+            } else if (event.key === 'ArrowDown' && direction.row === 0) {
+                direction = { row: 1, col: 0 };
+            } else if (event.key === 'ArrowLeft' && direction.col === 0) {
+                direction = { row: 0, col: -1 };
+            } else if (event.key === 'ArrowRight' && direction.col === 0) {
+                direction = { row: 0, col: 1 };
+            }
+        }
+
+        // Запуск гри
+        function startGame() {
+            createGrid();
+            placeFood();
+            gameInterval = setInterval(updateGame, 200); // Гра оновлюється кожні 200 мс
+            window.addEventListener('keydown', handleKeyPress);
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
